@@ -29,12 +29,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
         run: |
+          echo "Deploying to Codespace: ${{ secrets.CODESPACE_NAME }}"
           gh codespace ssh -c "${{ secrets.CODESPACE_NAME }}" -- "
             set -e
             
+            echo '--- Inside Codespace ---'
+            echo 'Pulling latest Docker image...'
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/simple-flask-app:latest
             
+            echo 'Stopping and removing old container...'
             docker rm -f flask-container || true
             
+            echo 'Starting new container...'
             docker run -d --name flask-container -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/simple-flask-app:latest
+            
+            echo 'Deployment successful!'
+            echo '--- Exiting Codespace ---'
           "
