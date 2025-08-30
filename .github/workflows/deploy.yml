@@ -1,0 +1,51 @@
+name: Deploy to Codespace
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/simple-flask-app:latest
+
+      - name: Deploy to Codespace via GitHub CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Deploying to Codespace: ${{ secrets.CODESPACE_NAME }}"
+          
+          # gh codespace ssh menjalankan perintah di dalam Codespace
+          # Tanda '--' memisahkan argumen gh dari perintah yang akan dijalankan
+          gh codespace ssh -c "${{ secrets.CODESPACE_NAME }}" -- "
+            set -e
+            
+            echo '--- Inside Codespace ---'
+            echo 'Pulling latest Docker image...'
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/simple-flask-app:latest
+            
+            echo 'Stopping and removing old container...'
+            docker rm -f flask-container || true
+            
+            echo 'Starting new container...'
+            docker run -d --name flask-container -p 80:80 ${{ secrets.DOCKERHUB_USERNAME }}/simple-flask-app:latest
+            
+            echo 'Deployment successful!'
+            echo '--- Exiting Codespace ---'
+          "
