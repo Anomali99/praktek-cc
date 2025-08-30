@@ -44,7 +44,7 @@ jobs:
             docker rm -f flask-container || true
             
             echo 'Starting new container...'
-            docker run -d --name flask-container ${{ secrets.DOCKERHUB_USERNAME }}/simple-flask-app:latest
+            docker run -d --name flask-container -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/simple-flask-app:latest
             
             echo 'Deployment successful!'
             echo '--- Exiting Codespace ---'
